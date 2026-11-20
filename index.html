@@ -130,6 +130,33 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
 #hHint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(108px + env(safe-area-inset-bottom,0px));background:var(--hud);color:#fff;border-radius:20px;padding:9px 16px;font-size:14.5px;white-space:nowrap;transition:opacity .4s}
 #vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,40,60,0) 45%,rgba(255,40,60,.85) 100%);opacity:0}
 #loading{position:fixed;inset:0;display:grid;place-items:center;background:#1B2236;color:#fff;font-family:Bungee,"Arial Black",sans-serif;font-size:26px}
+/* touch controls */
+#touchLayer{position:absolute;inset:0;pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent}
+#touchLayer[hidden]{display:none}
+.tz{position:absolute;bottom:calc(26px + env(safe-area-inset-bottom,0px));width:86px;height:86px;border-radius:50%;background:rgba(20,26,44,.32);border:3px solid rgba(255,255,255,.22);
+  display:grid;place-items:center;color:#fff;font-size:40px;font-weight:700;opacity:.65;transition:background .08s,opacity .08s;pointer-events:none}
+.tz.on{background:rgba(255,79,139,.6);border-color:#fff;opacity:1}
+#tzL{left:26px} #tzR{right:26px}
+#hSlots.touch{position:absolute;inset:0;left:0;bottom:auto;transform:none;display:block;pointer-events:none}
+#hSlots.touch .slot{position:absolute;pointer-events:auto;touch-action:none;cursor:pointer}
+#hSlots.touch .slot svg{width:47%;height:47%}
+#hSlots.touch .k{display:none}
+.tpause{position:absolute;pointer-events:auto;touch-action:none;border-radius:13px;background:var(--hud);border:3px solid rgba(255,255,255,.3);display:grid;place-items:center;padding:0}
+.tpause[hidden]{display:none}
+.tpause svg{width:42%;height:42%}
+#editor{background:rgba(10,14,26,.45);touch-action:none;padding:0}
+.ed-half{position:absolute;top:0;bottom:0;width:50%;display:grid;place-items:center;color:rgba(255,255,255,.4);font-family:Bungee,"Arial Black",sans-serif;font-size:clamp(18px,3.6vw,32px);border:2px dashed rgba(255,255,255,.2);pointer-events:none}
+.ed-half.l{left:0}.ed-half.r{right:0}
+.ed-item{position:absolute;border-radius:14px;background:var(--hud);border:3px solid rgba(255,255,255,.5);display:grid;place-items:center;touch-action:none;cursor:grab;z-index:3}
+.ed-item svg{width:47%;height:47%;pointer-events:none}
+.ed-item.sel{border-color:#FF4F8B;box-shadow:0 0 0 4px rgba(255,79,139,.35)}
+.ed-handle{position:absolute;right:-13px;bottom:-13px;width:28px;height:28px;border-radius:50%;background:#FF4F8B;border:3px solid #fff;cursor:nwse-resize;touch-action:none}
+.ed-panel{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--panel);border:3px solid var(--line);border-radius:16px;
+  padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:center;width:min(560px,calc(100% - 24px));z-index:2;box-shadow:5px 5px 0 var(--line)}
+.ed-panel b{font-family:Bungee,"Arial Black",sans-serif;font-weight:400;font-size:18px;color:var(--accent)}
+.ed-panel #edSel{font-size:13.5px;color:var(--muted);flex-basis:100%;text-align:center}
+.ed-panel label{display:flex;gap:8px;align-items:center;font-size:14px}
+#touchOpts[hidden],#kbOpts[hidden]{display:none}
 @media (max-width:640px){
   .gcard{grid-template-columns:1fr}
   .htl{min-width:0}
@@ -151,7 +178,9 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
   <div class="htr">Heat <div id="hHeat"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
   <div id="hBanner"></div>
   <div id="hHint"></div>
+  <div id="touchLayer" hidden><div class="tz" id="tzL" aria-hidden="true">‹</div><div class="tz" id="tzR" aria-hidden="true">›</div></div>
   <div class="slots" id="hSlots"></div>
+  <button class="tpause" id="tPause" type="button" aria-label="Pause" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="3" width="4.5" height="14" rx="1.2" fill="#fff"/><rect x="11.5" y="3" width="4.5" height="14" rx="1.2" fill="#fff"/></svg></button>
 </div>
 
 <div id="menu" class="screen" hidden>
@@ -203,8 +232,15 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
   <div class="card" role="dialog" aria-labelledby="setTitle">
     <h2 class="display" id="setTitle">Settings</h2>
     <div class="sec">Controls</div>
-    <div class="binds" id="bindList"></div>
-    <p class="hintline">Select a key, then press the new key. Esc cancels. Hold both steering keys to reverse. Esc always pauses a run.</p>
+    <div class="opt"><span>Control type</span><div class="seg" id="optInput"><button type="button" data-v="keyboard">Keyboard</button><button type="button" data-v="touch">Touchscreen</button></div></div>
+    <div id="kbOpts">
+      <div class="binds" id="bindList"></div>
+      <p class="hintline">Select a key, then press the new key. Esc cancels. Hold both steering keys to reverse. Esc always pauses a run.</p>
+    </div>
+    <div id="touchOpts" hidden>
+      <p class="hintline">Touch the left half of the screen to steer left and the right half to steer right. Touch both to reverse. Tap a power-up button to fire it.</p>
+      <div class="row"><button class="btn small" id="setEditLayout" type="button">Edit touch layout</button></div>
+    </div>
     <div class="sec">Graphics</div>
     <div class="opt"><span>Quality</span><div class="seg" id="optQuality"><button type="button" data-v="low">Low</button><button type="button" data-v="medium">Medium</button><button type="button" data-v="high">High</button></div></div>
     <div class="opt"><span>Camera distance</span><div class="seg" id="optCam"><button type="button" data-v="close">Close</button><button type="button" data-v="normal">Normal</button><button type="button" data-v="far">Far</button></div></div>
@@ -215,6 +251,19 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
       <button class="btn small primary" id="setDone" type="button">Done</button>
       <button class="btn small" id="setReset" type="button">Reset controls</button>
     </div>
+  </div>
+</div>
+
+<div id="editor" class="screen" hidden>
+  <div class="ed-half l">Steer left</div><div class="ed-half r">Steer right</div>
+  <div id="edItems"></div>
+  <div class="ed-panel">
+    <b>Touch layout</b>
+    <span id="edSel">Drag a button to move it. Drag its pink corner to resize.</span>
+    <label for="edSize">Size <input type="range" id="edSize" min="44" max="132" step="1"></label>
+    <button class="btn small primary" id="edDone" type="button">Save</button>
+    <button class="btn small" id="edReset" type="button">Reset</button>
+    <button class="btn small" id="edCancel" type="button">Cancel</button>
   </div>
 </div>
 
@@ -303,9 +352,10 @@ const vehById = id => VEH.find(v => v.id === id) || VEH[0];
 /* ================= save ================= */
 const ACTIONS = [['left', 'Steer left'], ['right', 'Steer right'], ['pu1', 'Nitro'], ['pu2', 'Oil slick'], ['pu3', 'Shield'], ['pu4', 'Shockwave'], ['pause', 'Pause']];
 const DEFAULT_BINDS = { left: 'KeyA', right: 'KeyD', pu1: 'Digit1', pu2: 'Digit2', pu3: 'Digit3', pu4: 'Digit4', pause: 'KeyP' };
-const DEFAULT_OPTS = { quality: 'high', cam: 'normal', shake: true, volume: 0.7 };
+const COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+const DEFAULT_OPTS = { quality: COARSE ? 'medium' : 'high', cam: 'normal', shake: true, volume: 0.7, input: COARSE ? 'touch' : 'keyboard' };
 const SAVE_KEY = 'burnout-boulevard-3d-v1';
-function freshSave() { return { bank: 0, owned: ['pip'], sel: 'pip', best: 0, runs: 0, binds: { ...DEFAULT_BINDS }, opts: { ...DEFAULT_OPTS }, updated: 0 }; }
+function freshSave() { return { bank: 0, owned: ['pip'], sel: 'pip', best: 0, runs: 0, binds: { ...DEFAULT_BINDS }, opts: { ...DEFAULT_OPTS }, layout: null, updated: 0 }; }
 function sanitize(s) {
   const d = freshSave();
   if (!s || typeof s !== 'object') return d;
@@ -318,6 +368,11 @@ function sanitize(s) {
     if (['close', 'normal', 'far'].includes(s.opts.cam)) d.opts.cam = s.opts.cam;
     if (typeof s.opts.shake === 'boolean') d.opts.shake = s.opts.shake;
     if (typeof s.opts.volume === 'number') d.opts.volume = clamp(s.opts.volume, 0, 1);
+    if (s.opts.input === 'keyboard' || s.opts.input === 'touch') d.opts.input = s.opts.input;
+  }
+  const okIt = it => it && typeof it === 'object' && [it.x, it.y, it.s].every(v => typeof v === 'number' && isFinite(v));
+  if (s.layout && Array.isArray(s.layout.pu) && s.layout.pu.length === 4 && s.layout.pu.every(okIt) && okIt(s.layout.pause)) {
+    d.layout = { pu: s.layout.pu.map(it => ({ x: clamp(it.x, 0, 1), y: clamp(it.y, 0, 1), s: clamp(it.s, 44, 132) })), pause: { x: clamp(s.layout.pause.x, 0, 1), y: clamp(s.layout.pause.y, 0, 1), s: clamp(s.layout.pause.s, 44, 132) } };
   }
   d.updated = +s.updated || 0;
   return d;
@@ -2156,8 +2211,9 @@ function update(dt, rdt) {
 
   // player
   if (!p.dead) {
-    const rev = keys.left && keys.right;
-    const inp = rev ? 0 : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    const kL = keys.left || touch.left, kR = keys.right || touch.right;
+    const rev = kL && kR;
+    const inp = rev ? 0 : (kR ? 1 : 0) - (kL ? 1 : 0);
     p.steer = lerp(p.steer, inp, min(1, dt * 5));
     const turn = p.turn * (p.nitro > 0 ? 0.85 : 1);
     p.a += p.steer * turn * dt * clamp(hypot(p.vx, p.vy) / 14, 0.4, 1);
@@ -2530,6 +2586,7 @@ function buildSlots() {
   PU.forEach((k, i) => {
     const s = document.createElement('div'); s.className = 'slot';
     s.innerHTML = ICONS[k] + `<span class="k"></span><span class="n"></span><span class="t" style="background:${SLOT_COL[i]}"></span>`;
+    s.addEventListener('pointerdown', e => { if (state === 'play' && SAVE.opts.input === 'touch') { e.preventDefault(); e.stopPropagation(); initAudio(); usePU(i); } });
     el.appendChild(s);
   });
 }
@@ -2551,10 +2608,11 @@ function updateHUD() {
     s.querySelector('.n').textContent = n > 0 ? '×' + n : '';
     s.querySelector('.k').textContent = keyName(SAVE.binds['pu' + (i + 1)]);
     const left = i === 0 ? p.nitro / (p.nitroMax || 3.5) : i === 1 ? p.oilT / 2.6 : i === 2 ? p.shield / 6 : 0;
-    s.querySelector('.t').style.width = (left > 0 ? left * 64 : 0) + 'px';
+    s.querySelector('.t').style.width = (left > 0 ? left * 100 : 0) + '%';
   }
   const hint = $('hHint');
-  if (G.hintT > 0) { hint.style.opacity = clamp(G.hintT, 0, 1); hint.textContent = `${keyName(SAVE.binds.left)} and ${keyName(SAVE.binds.right)} to steer, hold both to reverse. Power-ups: ${PU.map((_, i) => keyName(SAVE.binds['pu' + (i + 1)])).join(', ')}.`; }
+  if (G.hintT > 0 && SAVE.opts.input === 'touch') { hint.style.opacity = clamp(G.hintT, 0, 1); hint.textContent = 'Touch left or right to steer, both to reverse. Tap a power-up to fire it.'; }
+  else if (G.hintT > 0) { hint.style.opacity = clamp(G.hintT, 0, 1); hint.textContent = `${keyName(SAVE.binds.left)} and ${keyName(SAVE.binds.right)} to steer, hold both to reverse. Power-ups: ${PU.map((_, i) => keyName(SAVE.binds['pu' + (i + 1)])).join(', ')}.`; }
   else hint.style.opacity = 0;
   const low = !p.dead && hp < 0.3 ? 0.22 + 0.12 * sin(G.t * 7) : 0;
   $('vig').style.opacity = max(G.flash, low).toFixed(3);
@@ -2592,7 +2650,7 @@ function drawOverlay() {
 }
 
 /* ================= screens ================= */
-const screens = ['menu', 'garage', 'settings', 'pause', 'over', 'hud'];
+const screens = ['menu', 'garage', 'settings', 'editor', 'pause', 'over', 'hud'];
 function show(...ids) { for (const s of screens) $(s).hidden = !ids.includes(s); }
 function refreshMenu() {
   $('mBank').textContent = money(SAVE.bank); $('mBest').textContent = SAVE.best.toLocaleString(); $('mCar').textContent = vehById(SAVE.sel).name;
@@ -2606,12 +2664,13 @@ function toMenu() {
   setTimeout(() => $('mDrive').focus(), 0);
 }
 function startRun() {
+  clearTouch(); applyTouchLayout();
   initAudio();
   endRunCleanup(); newRun();
   state = 'play'; show('hud'); hudCache.hp = null;
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
 }
-function pauseRun() { if (state !== 'play' || !G || G.p.dead) return; state = 'pause'; show('hud', 'pause'); setTimeout(() => $('pResume').focus(), 0); }
+function pauseRun() { clearTouch(); if (state !== 'play' || !G || G.p.dead) return; state = 'pause'; show('hud', 'pause'); setTimeout(() => $('pResume').focus(), 0); }
 function resumeRun() { if (state !== 'pause') return; state = 'play'; show('hud'); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); keys.left = keys.right = false; }
 function gameOver() {
   state = 'over'; G.ts = 1;
@@ -2685,22 +2744,121 @@ function renderSettings() {
     b.addEventListener('click', () => { listening = k; renderSettings(); });
     list.append(l, b);
   }
-  for (const [id, key, val] of [['optQuality', 'quality', SAVE.opts.quality], ['optCam', 'cam', SAVE.opts.cam], ['optShake', 'shake', SAVE.opts.shake ? 'on' : 'off']]) {
+  $('kbOpts').hidden = SAVE.opts.input === 'touch'; $('touchOpts').hidden = SAVE.opts.input !== 'touch';
+  for (const [id, key, val] of [['optInput', 'input', SAVE.opts.input], ['optQuality', 'quality', SAVE.opts.quality], ['optCam', 'cam', SAVE.opts.cam], ['optShake', 'shake', SAVE.opts.shake ? 'on' : 'off']]) {
     for (const b of $(id).children) b.setAttribute('aria-pressed', String(b.dataset.v === val));
   }
   $('optVol').value = Math.round(SAVE.opts.volume * 100);
 }
-for (const [id, key] of [['optQuality', 'quality'], ['optCam', 'cam'], ['optShake', 'shake']]) {
+for (const [id, key] of [['optInput', 'input'], ['optQuality', 'quality'], ['optCam', 'cam'], ['optShake', 'shake']]) {
   $(id).addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     SAVE.opts[key] = key === 'shake' ? b.dataset.v === 'on' : b.dataset.v;
-    persist(); if (key === 'quality') applyQuality(); renderSettings();
+    persist(); if (key === 'quality') applyQuality(); if (key === 'input') applyTouchLayout(); renderSettings();
   });
 }
 $('optVol').addEventListener('input', e => { SAVE.opts.volume = e.target.value / 100; setVolume(); });
 $('optVol').addEventListener('change', () => { persist(); initAudio(); tone(660, 0.08, 'triangle', 0.1); });
 $('setReset').addEventListener('click', () => { SAVE.binds = { ...DEFAULT_BINDS }; listening = null; persist(); renderSettings(); });
 $('setDone').addEventListener('click', closeSettings);
+
+/* touch controls */
+const touch = { left: false, right: false }, tPointers = new Map();
+function tUpdate() {
+  let l = false, r = false;
+  for (const x of tPointers.values()) { if (x < window.innerWidth / 2) l = true; else r = true; }
+  touch.left = l; touch.right = r;
+  $('tzL').classList.toggle('on', l); $('tzR').classList.toggle('on', r);
+}
+function clearTouch() { tPointers.clear(); tUpdate(); }
+const tLayer = $('touchLayer');
+tLayer.addEventListener('pointerdown', e => {
+  if (state !== 'play') return;
+  e.preventDefault(); initAudio();
+  try { tLayer.setPointerCapture(e.pointerId); } catch (err) { }
+  tPointers.set(e.pointerId, e.clientX); tUpdate();
+});
+tLayer.addEventListener('pointermove', e => { if (tPointers.has(e.pointerId)) { tPointers.set(e.pointerId, e.clientX); tUpdate(); } });
+for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) tLayer.addEventListener(ev, e => { if (tPointers.delete(e.pointerId)) tUpdate(); });
+tLayer.addEventListener('contextmenu', e => e.preventDefault());
+$('tPause').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); pauseRun(); });
+
+function defaultLayout() {
+  const w = window.innerWidth, h = window.innerHeight, gap = 10, leftRes = 280, rightRes = 215;
+  const fitTop = min(66, Math.floor((w - leftRes - rightRes - 3 * gap - 12) / 4));
+  const top = fitTop >= 48, sz = top ? fitTop : (w < 520 ? 60 : 66), total = 4 * sz + 3 * gap;
+  const cx = top ? leftRes + (w - leftRes - rightRes) / 2 : w / 2, cy = top ? 18 + sz / 2 : 150 + sz / 2;
+  return {
+    pu: [0, 1, 2, 3].map(i => ({ x: (cx - total / 2 + sz / 2 + i * (sz + gap)) / w, y: cy / h, s: sz })),
+    pause: { x: (w - 50) / w, y: 104 / h, s: 52 }
+  };
+}
+const layoutNow = () => SAVE.layout || defaultLayout();
+function placeEl(el, it) {
+  const w = window.innerWidth, h = window.innerHeight, sz = it.s;
+  const cx = clamp(it.x * w, sz / 2 + 4, w - sz / 2 - 4), cy = clamp(it.y * h, sz / 2 + 4, h - sz / 2 - 4);
+  el.style.left = (cx - sz / 2) + 'px'; el.style.top = (cy - sz / 2) + 'px'; el.style.width = el.style.height = sz + 'px';
+}
+function applyTouchLayout() {
+  const t = SAVE.opts.input === 'touch', L = layoutNow(), slots = $('hSlots').children;
+  $('hSlots').classList.toggle('touch', t);
+  for (let i = 0; i < 4; i++) { if (t) placeEl(slots[i], L.pu[i]); else slots[i].style.left = slots[i].style.top = slots[i].style.width = slots[i].style.height = ''; }
+  $('tPause').hidden = !t; if (t) placeEl($('tPause'), L.pause);
+  tLayer.hidden = !t;
+  if (!t) clearTouch();
+}
+addEventListener('resize', () => { applyTouchLayout(); if (state === 'editor') renderEditor(); });
+
+/* layout editor */
+const PAUSE_SVG = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="3" width="4.5" height="14" rx="1.2" fill="#fff"/><rect x="11.5" y="3" width="4.5" height="14" rx="1.2" fill="#fff"/></svg>';
+let edWork = null, edSel = 0, edDrag = null;
+const edGet = i => i < 4 ? edWork.pu[i] : edWork.pause;
+const edName = i => i < 4 ? PU_NAME[i] : 'Pause';
+function edClamp(it) { const w = window.innerWidth, h = window.innerHeight; it.x = clamp(it.x, (it.s / 2 + 4) / w, 1 - (it.s / 2 + 4) / w); it.y = clamp(it.y, (it.s / 2 + 4) / h, 1 - (it.s / 2 + 4) / h); }
+function buildEditor() {
+  const box = $('edItems'); box.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div'); el.className = 'ed-item'; el.setAttribute('role', 'button'); el.setAttribute('aria-label', edName(i) + ' button');
+    el.innerHTML = (i < 4 ? ICONS[PU[i]] : PAUSE_SVG) + '<span class="ed-handle" aria-hidden="true"></span>';
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); edSel = i;
+      try { el.setPointerCapture(e.pointerId); } catch (err) { }
+      const it = edGet(i);
+      edDrag = { id: e.pointerId, i, resize: !!e.target.closest('.ed-handle'), sx: e.clientX, sy: e.clientY, x0: it.x * window.innerWidth, y0: it.y * window.innerHeight, s0: it.s };
+      renderEditor();
+    });
+    el.addEventListener('pointermove', e => {
+      if (!edDrag || edDrag.id !== e.pointerId) return;
+      const it = edGet(edDrag.i), dx = e.clientX - edDrag.sx, dy = e.clientY - edDrag.sy;
+      if (edDrag.resize) it.s = clamp(Math.round(edDrag.s0 + (dx + dy) * 0.7), 44, 132);
+      else { it.x = (edDrag.x0 + dx) / window.innerWidth; it.y = (edDrag.y0 + dy) / window.innerHeight; }
+      edClamp(it); renderEditor();
+    });
+    for (const ev of ['pointerup', 'pointercancel']) el.addEventListener(ev, () => { edDrag = null; });
+    box.appendChild(el);
+  }
+}
+function renderEditor() {
+  const items = $('edItems').children;
+  for (let i = 0; i < 5; i++) { placeEl(items[i], edGet(i)); items[i].classList.toggle('sel', i === edSel); }
+  $('edSize').value = edGet(edSel).s;
+  $('edSel').textContent = edName(edSel) + ' selected. Drag a button to move it, drag its pink corner to resize.';
+}
+function openEditor() {
+  edWork = JSON.parse(JSON.stringify(layoutNow())); edSel = 0;
+  state = 'editor'; show(...(settingsFrom === 'pause' ? ['hud', 'editor'] : ['editor']));
+  if (!$('edItems').children.length) buildEditor();
+  renderEditor();
+}
+function closeEditor(save) {
+  if (save) { SAVE.layout = edWork; persist(); applyTouchLayout(); }
+  edDrag = null; openSettings(settingsFrom);
+}
+$('edSize').addEventListener('input', e => { const it = edGet(edSel); it.s = +e.target.value; edClamp(it); renderEditor(); });
+$('edDone').addEventListener('click', () => closeEditor(true));
+$('edCancel').addEventListener('click', () => closeEditor(false));
+$('edReset').addEventListener('click', () => { edWork = defaultLayout(); renderEditor(); });
+$('setEditLayout').addEventListener('click', openEditor);
 
 /* buttons */
 $('mDrive').addEventListener('click', startRun);
@@ -2744,6 +2902,7 @@ addEventListener('keydown', e => {
   const onButton = e.target && e.target.tagName === 'BUTTON';
   if (state === 'pause' && (c === B.pause || c === 'Escape')) { resumeRun(); return; }
   if (state === 'settings' && c === 'Escape') { closeSettings(); return; }
+  if (state === 'editor' && c === 'Escape') { closeEditor(false); return; }
   if (state === 'garage') {
     if (c === B.left || c === 'ArrowLeft') { garageStep(-1); e.preventDefault(); return; }
     if (c === B.right || c === 'ArrowRight') { garageStep(1); e.preventDefault(); return; }
@@ -2756,7 +2915,7 @@ addEventListener('keyup', e => {
   if (e.code === SAVE.binds.left) keys.left = false;
   if (e.code === SAVE.binds.right) keys.right = false;
 });
-addEventListener('blur', () => { keys.left = keys.right = false; pauseRun(); });
+addEventListener('blur', () => { keys.left = keys.right = false; clearTouch(); pauseRun(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.left = keys.right = false; pauseRun(); } });
 
 /* ================= loop ================= */
@@ -2799,11 +2958,11 @@ function frame(now) {
       const dt = rdt * G.ts;
       update(dt, rdt); syncGame(dt, rdt); updateHUD();
       renderer.render(scene, camera);
-    } else if (state === 'pause' || (state === 'settings' && settingsFrom === 'pause')) {
+    } else if (state === 'pause' || ((state === 'settings' || state === 'editor') && settingsFrom === 'pause')) {
       renderer.render(scene, camera);
     } else if (state === 'garage') {
       garageView(rdt); renderer.render(showScene, showCam);
-    } else if (state === 'menu' || state === 'settings') {
+    } else if (state === 'menu' || state === 'settings' || state === 'editor') {
       menuView(rdt); updateFx(rdt); renderer.render(scene, camera);
     }
     drawOverlay(); audioTick();
@@ -2814,12 +2973,13 @@ function frame(now) {
 /* ================= boot ================= */
 buildSlots();
 applyQuality();
+applyTouchLayout();
 resetWorld();
 $('loading').hidden = true;
 $('loading').style.display = 'none';
 toMenu();
 requestAnimationFrame(frame);
-window.__bb = { built: () => built, sim(n) { for (let i = 0; i < n; i++) { if (state !== 'play' && state !== 'over') break; update(1 / 60 * G.ts, 1 / 60); syncGame(1 / 60 * G.ts, 1 / 60); } updateHUD(); }, get G() { return G; }, get state() { return state; }, startRun, toGarage, toMenu, openSettings, usePU, keys, SAVE: () => SAVE, garageStep };
+window.__bb = { touch: () => touch, built: () => built, sim(n) { for (let i = 0; i < n; i++) { if (state !== 'play' && state !== 'over') break; update(1 / 60 * G.ts, 1 / 60); syncGame(1 / 60 * G.ts, 1 / 60); } updateHUD(); }, get G() { return G; }, get state() { return state; }, startRun, toGarage, toMenu, openSettings, usePU, keys, SAVE: () => SAVE, garageStep };
 })();
 </script>
 </body>
