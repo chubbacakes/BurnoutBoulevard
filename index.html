@@ -130,6 +130,32 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
 #hHint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(108px + env(safe-area-inset-bottom,0px));background:var(--hud);color:#fff;border-radius:20px;padding:9px 16px;font-size:14.5px;white-space:nowrap;transition:opacity .4s}
 #vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,40,60,0) 45%,rgba(255,40,60,.85) 100%);opacity:0}
 #loading{position:fixed;inset:0;display:grid;place-items:center;background:#1B2236;color:#fff;font-family:Bungee,"Arial Black",sans-serif;font-size:26px}
+/* online */
+#menu{overflow:auto}
+.menu-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.acct-line{margin:2px 0 0;color:#fff;font-size:14px;line-height:1.4;text-shadow:0 2px 8px rgba(20,26,44,.7);max-width:36ch}
+.field{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+.field input{flex:1 1 200px;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--chip);color:var(--ink)}
+.status{min-height:1.4em;margin:12px 0 0;font-size:14px;color:var(--bad)}
+.status.good{color:var(--good)}
+.card.wide{width:min(640px,100%)}
+.board-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.board-head h2{margin:0}
+.live{font-size:13px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.live::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.live.on{color:var(--good)}
+.live.on::before{background:#40C057;box-shadow:0 0 0 3px rgba(64,192,87,.25)}
+.board-me{margin:12px 0;font-weight:700;color:var(--ink)}
+.board-list{list-style:none;margin:0;padding:0;max-height:min(46vh,420px);overflow:auto;border:2px solid var(--line);border-radius:12px}
+.board-list li{display:grid;grid-template-columns:56px 1fr auto auto;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--bar);font-size:15px}
+.board-list li:last-child{border-bottom:0}
+.board-list li.me{background:rgba(255,79,139,.14)}
+.board-list li.empty{display:block;color:var(--muted);text-align:center}
+.board-list .pl{font-weight:700;color:var(--muted)}
+.board-list .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-list .lg{font-size:11.5px;font-weight:700;color:#1B2236;padding:3px 8px;border-radius:999px}
+.board-list .sc{font-family:Bungee,"Arial Black",sans-serif;font-size:15px;text-align:right;min-width:72px}
+@media (max-height:520px){.logo{font-size:38px}.tag{display:none}.menu-col{gap:9px}.menu-col .btn{padding:8px 16px;font-size:16px}.menu-meta{display:none}}
 /* touch controls */
 #touchLayer{position:absolute;inset:0;pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent}
 #touchLayer[hidden]{display:none}
@@ -189,7 +215,9 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
     <p class="tag">The job’s done and the whole department wants you. Keep the wheels turning, shove whatever’s loose into their path, and send the cruisers into everything but you.</p>
     <button class="btn primary" id="mDrive" type="button">Drive</button>
     <button class="btn" id="mGarage" type="button">Garage</button>
+    <div class="menu-row"><button class="btn" id="mBoard" type="button">Leaderboard</button><button class="btn" id="mAccount" type="button">Account</button></div>
     <button class="btn" id="mSettings" type="button">Settings</button>
+    <p class="acct-line" id="mAcct"></p>
     <div class="menu-meta">
       <div><b id="mBank">$0</b><span>Bank</span></div>
       <div><b id="mBest">0</b><span>Best score</span></div>
@@ -267,6 +295,45 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
   </div>
 </div>
 
+<div id="account" class="screen center" hidden>
+  <div class="card">
+    <h2 class="display">Account</h2>
+    <p class="lede" id="acOffline" hidden>Online features need an internet connection.</p>
+    <div id="acOut">
+      <p class="lede">Save your progress and post scores to the live leaderboard. There are no passwords here: play as a guest, or sign in with a link sent to your email.</p>
+      <div class="row"><button class="btn small primary" id="acGuest" type="button">Play as guest</button></div>
+      <div class="sec">Sign in with an email link</div>
+      <div class="field"><input type="email" id="acEmail" placeholder="you@example.com" autocomplete="email" aria-label="Email address"><button class="btn small" id="acSend" type="button">Send link</button></div>
+      <p class="hintline">Use this to keep the same progress on more than one device.</p>
+    </div>
+    <div id="acName" hidden>
+      <p class="lede">Choose a name for the leaderboard: 3 to 16 letters, numbers or underscores.</p>
+      <div class="field"><input type="text" id="acUser" maxlength="16" autocomplete="off" aria-label="Leaderboard name"><button class="btn small primary" id="acSaveName" type="button">Save name</button></div>
+    </div>
+    <div id="acIn" hidden>
+      <p class="lede">Signed in as <b id="acWho"></b>. <span id="acType"></span></p>
+      <div id="acUpgrade">
+        <div class="sec">Keep your progress on other devices</div>
+        <p class="hintline">Add your email and confirm the link we send. There’s no password to set.</p>
+        <div class="field"><input type="email" id="acUpEmail" placeholder="you@example.com" autocomplete="email" aria-label="Email address"><button class="btn small" id="acUpSend" type="button">Add email</button></div>
+      </div>
+      <div class="row"><button class="btn small" id="acRename" type="button">Change name</button><button class="btn small" id="acOutBtn" type="button">Sign out</button></div>
+    </div>
+    <p class="status" id="acStatus" role="status"></p>
+    <div class="row"><button class="btn small" id="acBack" type="button">Back</button></div>
+  </div>
+</div>
+
+<div id="board" class="screen center" hidden>
+  <div class="card wide">
+    <div class="board-head"><h2 class="display">Leaderboard</h2><span class="live" id="bLive">Connecting…</span></div>
+    <p class="board-me" id="bMe"></p>
+    <ol class="board-list" id="bList" aria-label="Top 50 scores"></ol>
+    <p class="hintline">Leagues: Bronze, then Silver from 5,000, Gold from 15,000, Platinum from 35,000 and Diamond from 70,000.</p>
+    <div class="row"><button class="btn small primary" id="bBack" type="button">Back</button><button class="btn small" id="bAcct" type="button">Account</button></div>
+  </div>
+</div>
+
 <div id="pause" class="screen center" hidden>
   <div class="card">
     <h2 class="display">Paused</h2>
@@ -289,9 +356,11 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
       <div class="stat"><b id="oBestV">0</b><span>Best score</span></div>
     </div>
     <p class="earned" id="oEarned">Banked $0</p>
+    <p class="hintline" id="oOnline" role="status"></p>
     <div class="row">
       <button class="btn small primary" id="oAgain" type="button">Drive again</button>
       <button class="btn small" id="oGarage" type="button">Garage</button>
+      <button class="btn small" id="oBoard" type="button">Leaderboard</button>
       <button class="btn small" id="oMenu" type="button">Menu</button>
     </div>
   </div>
@@ -300,6 +369,7 @@ input[type=range]{width:180px;accent-color:#FF4F8B}
 <div id="loading">Loading…</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
 <script>
 (() => {
 'use strict';
@@ -378,11 +448,13 @@ function sanitize(s) {
   return d;
 }
 let SAVE = freshSave();
+let ON = null;
 try { SAVE = sanitize(JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')); } catch (e) { SAVE = freshSave(); }
 let cloudDoc = null, cloudTimer = null;
 function persist() {
   SAVE.updated = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) { }
+  if (ON && ON.user) cloudPush();
   if (cloudDoc) {
     clearTimeout(cloudTimer);
     cloudTimer = setTimeout(() => { try { cloudDoc.set({ save: JSON.parse(JSON.stringify(SAVE)) }).catch(() => { }); } catch (e) { } }, 1200);
@@ -2650,7 +2722,7 @@ function drawOverlay() {
 }
 
 /* ================= screens ================= */
-const screens = ['menu', 'garage', 'settings', 'editor', 'pause', 'over', 'hud'];
+const screens = ['menu', 'garage', 'settings', 'editor', 'account', 'board', 'pause', 'over', 'hud'];
 function show(...ids) { for (const s of screens) $(s).hidden = !ids.includes(s); }
 function refreshMenu() {
   $('mBank').textContent = money(SAVE.bank); $('mBest').textContent = SAVE.best.toLocaleString(); $('mCar').textContent = vehById(SAVE.sel).name;
@@ -2665,6 +2737,7 @@ function toMenu() {
 }
 function startRun() {
   clearTouch(); applyTouchLayout();
+  if (ON) onlineRunStart();
   initAudio();
   endRunCleanup(); newRun();
   state = 'play'; show('hud'); hudCache.hp = null;
@@ -2680,6 +2753,7 @@ function gameOver() {
   $('oScore').textContent = sc.toLocaleString(); $('oTime').textContent = fmtTime(G.t); $('oCops').textContent = String(G.wrecks);
   $('oBestV').textContent = SAVE.best.toLocaleString(); $('oBest').hidden = !isBest;
   $('oEarned').textContent = `Banked ${money(G.runCash)}. You now have ${money(SAVE.bank)}.`;
+  if (ON) onlineRunEnd(sc, G.t, G.wrecks); else $('oOnline').textContent = '';
   show('hud', 'over'); setTimeout(() => $('oAgain').focus(), 0);
 }
 
@@ -2903,6 +2977,7 @@ addEventListener('keydown', e => {
   if (state === 'pause' && (c === B.pause || c === 'Escape')) { resumeRun(); return; }
   if (state === 'settings' && c === 'Escape') { closeSettings(); return; }
   if (state === 'editor' && c === 'Escape') { closeEditor(false); return; }
+  if ((state === 'account' || state === 'board') && c === 'Escape') { toMenu(); return; }
   if (state === 'garage') {
     if (c === B.left || c === 'ArrowLeft') { garageStep(-1); e.preventDefault(); return; }
     if (c === B.right || c === 'ArrowRight') { garageStep(1); e.preventDefault(); return; }
@@ -2962,13 +3037,181 @@ function frame(now) {
       renderer.render(scene, camera);
     } else if (state === 'garage') {
       garageView(rdt); renderer.render(showScene, showCam);
-    } else if (state === 'menu' || state === 'settings' || state === 'editor') {
+    } else if (state === 'menu' || state === 'settings' || state === 'editor' || state === 'account' || state === 'board') {
       menuView(rdt); updateFx(rdt); renderer.render(scene, camera);
     }
     drawOverlay(); audioTick();
   } catch (err) { console.error(err); }
   requestAnimationFrame(frame);
 }
+
+/* ================= online: accounts, cloud saves, live leaderboard ================= */
+const SB_URL = 'https://zttpwkxkxyqwyfvkkcjq.supabase.co';
+const SB_KEY = 'sb_publishable_aSjKhuDLeB7iD0ywvVJx2w_lSu8uXDB';
+const LEAGUES = [['Diamond', 70000, '#B197FC'], ['Platinum', 35000, '#66D9E8'], ['Gold', 15000, '#F2B705'], ['Silver', 5000, '#ADB5BD'], ['Bronze', 0, '#D9895B']];
+const leagueOf = sc => LEAGUES.find(l => sc >= l[1]);
+ON = { sb: null, ok: false, user: null, name: null, me: null, board: [], live: false, chan: null, pushT: null, boardT: null, runOk: false };
+try {
+  const blocked = /(^|\.)claude\.ai$|claudeusercontent/.test(location.hostname);
+  if (window.supabase && !blocked) { ON.sb = window.supabase.createClient(SB_URL, SB_KEY); ON.ok = true; }
+} catch (e) { ON.ok = false; }
+const friendly = err => {
+  const m = (err && (err.message || err.error_description)) || '';
+  if (/rate limit|too many/i.test(m)) return 'Too many tries. Wait a few minutes and try again.';
+  if (/invalid.*email|email.*invalid/i.test(m)) return 'That email address doesn’t look right.';
+  if (/network|fetch/i.test(m)) return 'Couldn’t reach the server. Check your connection.';
+  return m || 'Something went wrong. Try again.';
+};
+function acStatus(t, good) { const el = $('acStatus'); el.textContent = t || ''; el.classList.toggle('good', !!good); }
+function refreshAcct() {
+  const signedIn = !!ON.user, guest = signedIn && ON.user.is_anonymous;
+  $('mAcct').textContent = !ON.ok ? 'Online features need an internet connection.'
+    : !signedIn ? 'Not signed in. Open Account to save your progress and join the leaderboard.'
+    : !ON.name ? 'Signed in. Choose a name in Account to join the leaderboard.'
+    : `Playing as ${ON.name}${guest ? ' (guest)' : ''}.`;
+  $('acOffline').hidden = ON.ok;
+  $('acOut').hidden = !ON.ok || signedIn;
+  $('acName').hidden = !ON.ok || !signedIn || (!!ON.name && !ON.renaming);
+  $('acIn').hidden = !ON.ok || !signedIn || !ON.name || ON.renaming;
+  if (signedIn && ON.name) {
+    $('acWho').textContent = ON.name;
+    $('acType').textContent = guest ? 'Guest account: progress is saved to this browser’s account.' : `Email account (${ON.user.email || 'email pending'}): progress follows you to any device.`;
+    $('acUpgrade').hidden = !guest;
+  }
+}
+async function onAuth(session, ev) {
+  const prevId = ON.user && ON.user.id;
+  ON.user = session ? session.user : null;
+  if (ON.user && prevId === ON.user.id && ON.name && ev !== 'USER_UPDATED') { refreshAcct(); return; }
+  ON.name = null; ON.me = null;
+  if (ON.user) {
+    const { data } = await ON.sb.from('profiles').select('username').eq('id', ON.user.id).maybeSingle();
+    ON.name = data ? data.username : null;
+    await cloudPull();
+  }
+  refreshAcct();
+  if (state === 'board') loadBoard();
+}
+if (ON.ok) ON.sb.auth.onAuthStateChange((ev, session) => { setTimeout(() => onAuth(session, ev), 0); });
+
+/* cloud saves: progress merges safely, controls and layout stay per device */
+async function cloudPull() {
+  const { data, error } = await ON.sb.from('saves').select('data').eq('user_id', ON.user.id).maybeSingle();
+  if (error) return;
+  if (data && data.data) {
+    const c = sanitize(data.data), base = (c.runs > SAVE.runs || (c.runs === SAVE.runs && c.updated > SAVE.updated)) ? c : SAVE;
+    const merged = { bank: base.bank, sel: base.sel, runs: max(c.runs, SAVE.runs), best: max(c.best, SAVE.best), owned: [...new Set([...SAVE.owned, ...c.owned])] };
+    Object.assign(SAVE, merged);
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) { }
+    refreshMenu(); if (state === 'garage') renderGarageUI();
+  }
+  cloudPushNow();
+}
+function cloudPush() { if (!ON || !ON.user) return; clearTimeout(ON.pushT); ON.pushT = setTimeout(cloudPushNow, 1500); }
+async function cloudPushNow() {
+  if (!ON.user) return;
+  const data = { bank: SAVE.bank, owned: SAVE.owned, sel: SAVE.sel, best: SAVE.best, runs: SAVE.runs, updated: SAVE.updated || Date.now() };
+  try { await ON.sb.from('saves').upsert({ user_id: ON.user.id, data, updated_at: new Date().toISOString() }); } catch (e) { }
+}
+
+/* sign-in: guest or email link, never a password */
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+async function guestSignIn() {
+  acStatus('Setting up your guest account…');
+  const { error } = await ON.sb.auth.signInAnonymously();
+  acStatus(error ? friendly(error) : '');
+}
+async function sendLink() {
+  const email = $('acEmail').value.trim();
+  if (!validEmail(email)) return acStatus('Enter your email address first.');
+  acStatus('Sending…');
+  const { error } = await ON.sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  acStatus(error ? friendly(error) : 'Check your inbox and open the sign-in link. It brings you back here, signed in.', !error);
+}
+async function addEmail() {
+  const email = $('acUpEmail').value.trim();
+  if (!validEmail(email)) return acStatus('Enter your email address first.');
+  acStatus('Sending…');
+  const { error } = await ON.sb.auth.updateUser({ email }, { emailRedirectTo: location.origin + location.pathname });
+  acStatus(error ? friendly(error) : 'Check your inbox and confirm. Your progress stays on this account.', !error);
+}
+async function saveName() {
+  const n = $('acUser').value.trim();
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(n)) return acStatus('Names are 3 to 16 letters, numbers or underscores.');
+  acStatus('Saving…');
+  const { error } = await ON.sb.from('profiles').upsert({ id: ON.user.id, username: n });
+  if (error) return acStatus(error.code === '23505' ? 'That name is taken. Try another.' : friendly(error));
+  ON.name = n; ON.renaming = false; refreshAcct(); acStatus('Name saved.', true);
+}
+async function signOut() { await ON.sb.auth.signOut(); ON.user = null; ON.name = null; refreshAcct(); acStatus('Signed out. Your progress on this device is kept.', true); }
+
+/* scores */
+function onlineRunStart() { ON.runOk = false; if (ON.ok && ON.user && ON.name) ON.sb.rpc('start_run').then(({ error }) => { ON.runOk = !error; }); }
+async function onlineRunEnd(score, secs, wrecks) {
+  const el = $('oOnline');
+  if (!ON.ok) { el.textContent = ''; return; }
+  if (!ON.user || !ON.name) { el.textContent = 'Sign in from Account on the menu to post your scores to the leaderboard.'; return; }
+  if (secs < 5) { el.textContent = 'Runs shorter than 5 seconds aren’t posted.'; return; }
+  el.textContent = 'Posting your score…';
+  const { data, error } = await ON.sb.rpc('submit_score', { p_score: score, p_duration: secs, p_wrecks: wrecks });
+  if (error) { el.textContent = /no run/i.test(error.message) ? 'This run started before you signed in, so it wasn’t posted.' : 'Couldn’t post this score: ' + friendly(error); return; }
+  const lg = leagueOf(SAVE.best);
+  el.textContent = `You’re #${data} on the leaderboard, in the ${lg[0]} league.`;
+}
+
+/* leaderboard */
+async function loadBoard() {
+  if (!ON.ok) { renderBoard(); return; }
+  const { data, error } = await ON.sb.from('leaderboard').select('username,score,place,league').order('place').limit(50);
+  if (error) { ON.board = null; renderBoard(); return; }
+  ON.board = data || [];
+  ON.me = null;
+  if (ON.name) { const r = await ON.sb.from('leaderboard').select('score,place,league').eq('username', ON.name).maybeSingle(); ON.me = r.data || null; }
+  renderBoard();
+}
+function subscribeBoard() {
+  if (!ON.ok || ON.chan) return;
+  ON.chan = ON.sb.channel('leaderboard')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'best_scores' }, () => { clearTimeout(ON.boardT); ON.boardT = setTimeout(loadBoard, 400); })
+    .subscribe(st => { ON.live = st === 'SUBSCRIBED'; if (state === 'board') renderBoard(); });
+}
+function renderBoard() {
+  const list = $('bList'); list.innerHTML = '';
+  $('bLive').textContent = !ON.ok ? 'Offline' : ON.live ? 'Live' : 'Connecting…';
+  $('bLive').classList.toggle('on', ON.ok && ON.live);
+  if (!ON.ok) { $('bMe').textContent = 'The leaderboard needs an internet connection.'; return; }
+  if (ON.board === null) { $('bMe').textContent = 'Couldn’t load the leaderboard. Try again in a moment.'; return; }
+  $('bMe').textContent = !ON.user || !ON.name ? 'Sign in from Account to get on the board.'
+    : ON.me ? `You: #${ON.me.place}, ${ON.me.league} league, ${ON.me.score.toLocaleString()} points.`
+    : 'You’re signed in. Finish a run to post your first score.';
+  if (!ON.board.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No scores yet. Be the first.'; list.appendChild(li); return; }
+  for (const r of ON.board) {
+    const li = document.createElement('li'); if (ON.name && r.username === ON.name) li.className = 'me';
+    const lg = LEAGUES.find(l => l[0] === r.league) || LEAGUES[4];
+    const pl = document.createElement('span'); pl.className = 'pl'; pl.textContent = '#' + r.place;
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.username;
+    const badge = document.createElement('span'); badge.className = 'lg'; badge.textContent = r.league; badge.style.background = lg[2];
+    const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = r.score.toLocaleString();
+    li.append(pl, nm, badge, sc); list.appendChild(li);
+  }
+}
+function openBoard() { endRunCleanup(); clearRunFx(); state = 'board'; show('board'); subscribeBoard(); renderBoard(); loadBoard(); setTimeout(() => $('bBack').focus(), 0); }
+function openAccount() { endRunCleanup(); clearRunFx(); state = 'account'; ON.renaming = false; show('account'); acStatus(''); refreshAcct(); setTimeout(() => $('acBack').focus(), 0); }
+$('mBoard').addEventListener('click', openBoard);
+$('mAccount').addEventListener('click', openAccount);
+$('oBoard').addEventListener('click', openBoard);
+$('bBack').addEventListener('click', toMenu);
+$('bAcct').addEventListener('click', openAccount);
+$('acBack').addEventListener('click', toMenu);
+$('acGuest').addEventListener('click', guestSignIn);
+$('acSend').addEventListener('click', sendLink);
+$('acEmail').addEventListener('keydown', e => { if (e.key === 'Enter') sendLink(); });
+$('acUpSend').addEventListener('click', addEmail);
+$('acSaveName').addEventListener('click', saveName);
+$('acUser').addEventListener('keydown', e => { if (e.key === 'Enter') saveName(); });
+$('acRename').addEventListener('click', () => { ON.renaming = true; $('acUser').value = ON.name || ''; refreshAcct(); });
+$('acOutBtn').addEventListener('click', signOut);
+refreshAcct();
 
 /* ================= boot ================= */
 buildSlots();
